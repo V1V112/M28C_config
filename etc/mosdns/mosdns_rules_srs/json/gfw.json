@@ -1,0 +1,14 @@
+[
+  {
+    "name": "geosite:gfw",
+    "type": "geosite:gfw",
+    "files": "mosdns_rules_srs/srs/geosite/gfw.srs",
+    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/gfw.srs",
+    "enabled": true,
+    "enable_regexp": true,
+    "auto_update": true,
+    "update_interval_hours": 24,
+    "rule_count": 0,
+    "last_updated": "2026-05-26T00:00:00Z"
+  }
+]

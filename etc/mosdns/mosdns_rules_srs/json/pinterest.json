@@ -1,0 +1,14 @@
+[
+  {
+    "name": "geosite:pinterest",
+    "type": "geosite:pinterest",
+    "files": "mosdns_rules_srs/srs/geosite/pinterest.srs",
+    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/pinterest.srs",
+    "enabled": true,
+    "enable_regexp": true,
+    "auto_update": true,
+    "update_interval_hours": 24,
+    "rule_count": 0,
+    "last_updated": "2026-05-26T00:00:00Z"
+  }
+]

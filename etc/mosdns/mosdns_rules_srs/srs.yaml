@@ -1,0 +1,79 @@
+#### 数据列表 ####
+
+plugins:
+  # 自定义hosts
+  - tag: hosts
+    type: hosts
+    args:
+      files:
+        - mosdns_load_rules/geoip/hosts      # 自定义hosts
+
+### ============ 域名列表 ============ ###
+
+  ## 直连域名列表 ##
+  - tag: geosite:direct
+    type: sd_set
+    args:
+      local_config: "mosdns_rules_srs/json/direct.json"
+
+  ## 代理域名列表 ##
+  - tag: geosite:proxy
+    type: sd_set
+    args:
+      local_config: "mosdns_rules_srs/json/proxy.json"
+
+  ## GFW 域名列表 ##
+  - tag: geosite:gfw
+    type: sd_set
+    args:
+      local_config: "mosdns_rules_srs/json/gfw.json"
+
+  ## 国外 AI 域名列表 ##
+  - tag: geosite:category-ai-!cn
+    type: sd_set
+    args:
+      local_config: "mosdns_rules_srs/json/category-ai-!cn.json"
+
+  ## GitHub 域名列表 ##
+  - tag: geosite:github
+    type: sd_set
+    args:
+      local_config: "mosdns_rules_srs/json/github.json"
+
+  ## OneDrive 域名列表 ##
+  - tag: geosite:onedrive
+    type: sd_set
+    args:
+      local_config: "mosdns_rules_srs/json/onedrive.json"
+
+  ## PikPak 域名列表 ##
+  - tag: geosite:pikpak
+    type: sd_set
+    args:
+      local_config: "mosdns_rules_srs/json/pikpak.json"
+
+  ## Pinterest 域名列表 ##
+  - tag: geosite:pinterest
+    type: sd_set
+    args:
+      local_config: "mosdns_rules_srs/json/pinterest.json"
+
+  ## Cloudflare 域名列表 ##
+  - tag: geosite:cloudflare
+    type: sd_set
+    args:
+      local_config: "mosdns_rules_srs/json/cloudflare.json"
+
+### ============ IP 列表 ============###
+
+  ## 国内 IP 段 ##
+  - tag: geoip:cn
+    type: si_set
+    args:
+      local_config: "mosdns_rules_srs/json/china-ip.json"
+
+  ## Cloudflare IP 段 ##
+  - tag: geoip:cloudflare
+    type: si_set
+    args:
+      local_config: "mosdns_rules_srs/json/cloudflare-ip.json"
