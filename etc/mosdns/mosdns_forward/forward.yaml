@@ -5,7 +5,7 @@ plugins:
     args:
       concurrent: 1
       upstreams:
-        - addr: 127.0.0.1:531      # SmartDNS Direct
+        - addr: udp://127.0.0.1:531      # SmartDNS Direct
 #        - addr: 223.5.5.5:53
 
   - tag: smartdns_proxy
@@ -13,7 +13,7 @@ plugins:
     args:
       concurrent: 1
       upstreams:
-        - addr: 127.0.0.1:532      # SmartDNS Proxy
+        - addr: udp://127.0.0.1:532      # SmartDNS Proxy
 #        - addr: 1.1.1.1:853
 
 ## FakeIP DNS ##
@@ -22,7 +22,7 @@ plugins:
     args:
       concurrent: 1
       upstreams:
-        - addr: 127.0.0.1:5300      # FakeIP DNS
+        - addr: udp://127.0.0.1:5300      # FakeIP DNS
 
   # FakeIP 主解析序列：只接受真正有效的 FakeIP 应答；异常/无应答则丢弃，交给 fallback 触发 smartdns_proxy。
   - tag: fakeip_primary

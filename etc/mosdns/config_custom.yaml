@@ -18,7 +18,9 @@ include:
 
 plugins:
 ## 自定义域名列表 ##
-  - tag: customize_domain
+
+  # 列表中的域名使用 FakeIP DNS 解析
+  - tag: custom_fakeip
     type: domain_set
     args:
       exps:
@@ -30,6 +32,13 @@ plugins:
         - domain:javmenu.com      # Javdb
         - domain:jdbstatic.com      # Javdb
         - keyword:browserleaks      # DNS Leak Test
+
+ # 列表中的域名使用 SmartDNS Direct 解析
+  - tag: custom_direct
+    type: domain_set
+    args:
+      exps:
+        - domain:origin-a.akamaihd.net      # EA
 
   # 重定向域名列表
   - tag: redirect
@@ -51,21 +60,30 @@ plugins:
     type: sequence
     args:
 
-      # 域名重定向
+      # ====== 域名重定向 ====== #
       - exec: $redirect      # 域名重定向列表
       - matches: has_resp      # 有应答
         exec: exit      # 结束分支
 
-      # 自定义域名使用 FakeIP DNS 解析
+      # ====== 自定义域名使用 SmartDNS Direct 解析 ====== #
       - matches: qname
-          $customize_domain      # 自定义域名列表
+          $custom_direct     # 自定义域名列表
         exec:
-          - $fakeip_or_proxy      # 如果 FakeIP DNS 没有任何应答、超时、异常，才走 smartdns_proxy
+          - $smartdns_direct      # 使用 SmartDNS Direct 解析
       - matches:
         - has_resp      # 有应答
         exec: exit      # 结束分支
 
-      # GEOSITE 规则使用 FakeIP DNS 解析
+      # ====== 自定义域名使用 FakeIP DNS 解析 ====== #
+      - matches: qname
+          $custom_fakeip      # 自定义域名列表
+        exec:
+          - $fakeip_or_proxy      # 使用 FakeIP DNS 故障转移解析：如果 FakeIP DNS 没有任何应答、超时、异常，才走 smartdns_proxy
+      - matches:
+        - has_resp      # 有应答
+        exec: exit      # 结束分支
+
+      # ====== GEOSITE 规则使用 FakeIP DNS 解析 ====== #
       - matches: qname
           $geosite:category-ai-!cn
           $geosite:github
@@ -74,12 +92,12 @@ plugins:
           $geosite:pinterest
           $geosite:cloudflare
         exec:
-          - $fakeip_or_proxy      # 如果 FakeIP DNS 没有任何应答、超时、异常，才走 smartdns_proxy
+          - $fakeip_or_proxy      # 使用 FakeIP DNS 故障转移解析：如果 FakeIP DNS 没有任何应答、超时、异常，才走 smartdns_proxy
       - matches:
         - has_resp      # 有应答
         exec: exit      # 结束分支
 
-      # 使用 SmartDNS Direct 解析
+      # ====== 使用 SmartDNS Direct 解析 ====== #
       - matches: qname
           $geosite:direct      # 直连域名列表
         exec:
@@ -88,16 +106,16 @@ plugins:
         - has_resp      # 有应答
         exec: exit      # 结束分支
 
-      # 使用 FakeIP DNS 解析
+      # ====== 使用 FakeIP DNS 解析 ====== #
       - matches: qname
           $geosite:gfw      # GFW 规则列表
         exec:
-          - $fakeip_or_proxy      # 如果 FakeIP DNS 没有任何应答、超时、异常，才走 smartdns_proxy
+          - $fakeip_or_proxy      # 使用 FakeIP DNS 故障转移解析：如果 FakeIP DNS 没有任何应答、超时、异常，才走 smartdns_proxy
       - matches:
         - has_resp      # 有应答
         exec: exit      # 结束分支
 
-      # 使用 SmartDNS Proxy 解析
+      # ====== 使用 SmartDNS Proxy 解析 ====== #
       - matches: qname
           $geosite:proxy      # 代理域名列表
         exec:
@@ -106,7 +124,7 @@ plugins:
         - has_resp      # 有应答
         exec: exit      # 结束分支
 
-      # 解析未知域名      可选：$smartdns_direct / $smartdns_proxy / $fakeip_or_proxy / $fakeip_dns / $fallback 根据实际情况调整顺序和分组
+      # ====== 解析未知域名 ====== #      可选：$smartdns_direct / $smartdns_proxy / $fakeip_or_proxy / $fakeip_dns / $fallback 根据实际情况调整顺序和分组
       - exec:
         - $fallback      # 使用 fallback 解析
       - matches:
@@ -118,26 +136,26 @@ plugins:
     type: sequence
     args:
 
-      # 本地 hosts 列表
+      # ====== 本地 hosts 列表 ====== # 
       - exec: $hosts      # 本地 hosts 列表
       - matches: has_resp      # 有应答
         exec: exit      # 结束分支
 
-      # 屏蔽 SOA / PTR / HTTPS / SVCB 类型
+      # ====== 屏蔽 SOA / PTR / HTTPS / SVCB 类型 ====== # 
       - matches:
         - qtype 6 12 65 64      # SOA / PTR / HTTPS / SVCB 类型
         exec: 
           - reject 0      # NOERROR / 返回空响应
           - exit      # 结束分支
 
-      # 屏蔽 AdGuard 在线广告域名
+      # ====== 屏蔽 AdGuard 在线广告域名 ====== # 
       - matches: qname
           $adguard      # AdGuard 在线规则插件
         exec:
           - reject 0      # NOERROR / 返回空响应
           - exit      # 结束分支
 
-      # 优先返回IPv4地址
+      # ====== 优先返回IPv4地址 ====== # 
       - exec: prefer_ipv4      # 并发触发 A / AAAA 查询，优先返回 A 记录
       - exec: try $resolve_after_prefer      # 进入 prefer_ipv4 子序列，处理 A 查询结果；如果子序列中 exit 导致 ErrExit 错误，则捕获并继续执行 AAAA 查询
 

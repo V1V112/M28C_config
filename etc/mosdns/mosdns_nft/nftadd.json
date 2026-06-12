@@ -2,7 +2,7 @@
   {
     "name": "cloudflare",
     "type": "nft_add",
-    "files": "mosdns_nft/cloudflare.srs",
+    "files": "mosdns_nft/ip/cloudflare.srs",
     "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geoip/cloudflare.srs",
     "enabled": false,
     "auto_update": false,
@@ -13,7 +13,7 @@
   {
     "name": "netflix",
     "type": "nft_add",
-    "files": "mosdns_nft/netflix.srs",
+    "files": "mosdns_nft/ip/netflix.srs",
     "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geoip/netflix.srs",
     "enabled": true,
     "auto_update": false,
@@ -24,7 +24,7 @@
   {
     "name": "telegram",
     "type": "nft_add",
-    "files": "mosdns_nft/telegram.srs",
+    "files": "mosdns_nft/ip/telegram.srs",
     "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geoip/telegram.srs",
     "enabled": true,
     "auto_update": false,
