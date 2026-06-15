@@ -12,7 +12,7 @@ config wifi-iface 'default_radio0'
 	option network 'lan'
 	option mode 'ap'
 	option ssid 'M28C'
-	option encryption 'psk2'
+	option encryption 'psk2+ccmp'
 	option disabled '0'
 	option key '12345678'
 
