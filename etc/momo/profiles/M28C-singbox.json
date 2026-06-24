@@ -36,7 +36,7 @@
   ],
   "providers": [
     { "tag": "FlareiX_100G",
-      "url": "https://156.245.232.84:8443/api/proxy/open/subscription?passwd=acf96a6e-b84a-dbfd-acf9-6a6eb84adbfd&client=SIP002",
+      "url": "https://156.245.232.84:8443/api/proxy/open/subscription?passwd=acf96a6e-b84a-dbfd-acf9-6a6eb84adbfd&client=CLASH",
       "type": "remote", "health_check": { "enabled": false, "url": "https://www.gstatic.com/generate_204", "interval": "10m", "timeout": "3s" }, "download_detour": "全球直连", "update_interval": "12h",
       "exclude": "官网|剩余|流量|套餐|免费|订阅|全球直连|到期时间|GB|Expire Date|Traffic|ExpireDate"
     },

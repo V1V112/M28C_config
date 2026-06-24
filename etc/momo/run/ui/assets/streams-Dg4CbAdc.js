@@ -1,0 +1,1 @@
+const i=(n,a,l={})=>{let t=null,e=!1,o=0;return(async()=>{for(;!e;){t=new AbortController;try{for await(const r of n(t.signal)){if(e)return;l.resetBackoffOnMessage!==!1&&(o=0),a(r)}}catch(r){if(e)return;l.onError?.(r)}if(e)return;const s=Math.min(1e3*2**o,15e3);o+=1,await new Promise(r=>setTimeout(r,s))}})(),{close:()=>{e=!0,t?.abort()}}};export{i as r};
