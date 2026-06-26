@@ -115,6 +115,7 @@ config log 'log'
 	option scheduled_clear_cron '*/5 * * * *'
 	option scheduled_clear_size_limit '1'
 	option scheduled_clear_size_limit_unit 'MB'
+	option clear_at_stop '1'
 
 config placeholder 'placeholder'
 

@@ -19,7 +19,7 @@ config smartdns
 	option log_output_mode 'file'
 	option enabled '1'
 	option ui '0'
-	option old_port '5353'
+	option old_port '5335'
 	option old_enabled '1'
 	option old_auto_set_dnsmasq '0'
 
