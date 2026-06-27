@@ -16,7 +16,7 @@ config zone
 
 config zone
 	option name 'wan'
-	option input 'REJECT'
+	option input 'ACCEPT'
 	option output 'ACCEPT'
 	option forward 'DROP'
 	option masq '1'
