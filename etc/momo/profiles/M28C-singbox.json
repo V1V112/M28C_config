@@ -26,6 +26,7 @@
     "reverse_mapping": false
   },
   "inbounds": [
+    { "tag":"🌐M28C_组网_SS_IN", "type":"shadowsocks", "listen":"::", "listen_port":50000, "method":"aes-128-gcm", "password":"N7qLw9s_VP4eKx28mRA6zYtF5bCj3HDu", "udp_fragment": true },
     { "tag": "dns-in", "type": "direct", "listen": "::", "listen_port": 5353 },
     { "tag": "fakeip_dns-in", "type": "direct", "listen": "::", "listen_port": 5300 },
     { "tag": "http-in", "type": "http", "listen": "::", "listen_port": 7890 },
@@ -70,6 +71,8 @@
     { "tag": "Docker", "type": "selector", "outbounds": [ "节点选择", "香港_手动", "香港_故障转移", "台湾_手动", "台湾_故障转移", "日本_手动", "日本_故障转移", "新加坡_手动", "新加坡_故障转移", "美国_手动", "美国_故障转移", "全部节点_手动", "全部节点_故障转移" ] },
     { "tag": "Pixiv", "type": "selector", "outbounds": [ "节点选择", "香港_手动", "香港_故障转移", "台湾_手动", "台湾_故障转移", "日本_手动", "日本_故障转移", "新加坡_手动", "新加坡_故障转移", "美国_手动", "美国_故障转移", "全部节点_手动", "全部节点_故障转移" ] },
     { "tag": "Steam", "type": "selector", "outbounds": [ "节点选择", "香港_手动", "香港_故障转移", "台湾_手动", "台湾_故障转移", "日本_手动", "日本_故障转移", "新加坡_手动", "新加坡_故障转移", "美国_手动", "美国_故障转移", "全部节点_手动", "全部节点_故障转移" ] },
+    { "tag": "EA", "type": "selector", "outbounds": [ "节点选择", "香港_手动", "香港_故障转移", "台湾_手动", "台湾_故障转移", "日本_手动", "日本_故障转移", "新加坡_手动", "新加坡_故障转移", "美国_手动", "美国_故障转移", "全部节点_手动", "全部节点_故障转移" ] },
+    { "tag": "Reddit", "type": "selector", "outbounds": [ "节点选择", "香港_手动", "香港_故障转移", "台湾_手动", "台湾_故障转移", "日本_手动", "日本_故障转移", "新加坡_手动", "新加坡_故障转移", "美国_手动", "美国_故障转移", "全部节点_手动", "全部节点_故障转移" ] },
     { "tag": "HXD_Emby", "type": "selector", "outbounds": [ "节点选择", "香港_手动", "香港_故障转移", "台湾_手动", "台湾_故障转移", "日本_手动", "日本_故障转移", "新加坡_手动", "新加坡_故障转移", "美国_手动", "美国_故障转移", "全部节点_手动", "全部节点_故障转移" ] },
     { "tag": "Telegram", "type": "selector", "outbounds": [ "节点选择", "香港_手动", "香港_故障转移", "台湾_手动", "台湾_故障转移", "日本_手动", "日本_故障转移", "新加坡_手动", "新加坡_故障转移", "美国_手动", "美国_故障转移", "全部节点_手动", "全部节点_故障转移" ] },
     { "tag": "GFW", "type": "selector", "outbounds": [ "节点选择", "香港_手动", "香港_故障转移", "台湾_手动", "台湾_故障转移", "日本_手动", "日本_故障转移", "新加坡_手动", "新加坡_故障转移", "美国_手动", "美国_故障转移", "全部节点_手动", "全部节点_故障转移" ] },
@@ -91,13 +94,14 @@
     { "tag": "全部节点_故障转移", "type": "urltest", "interval": "5m", "outbounds": null, "use_all_providers": true, "exclude": "网站|流量|地址|剩余|过期|免费|时间|有效|Traffic|ExpireDate|GB|Expire Date", "fallback": {"enabled": true} },
 
     { "tag": "GLOBAL", "type": "selector", "outbounds": [
-        "节点选择", "AI", "TikTok", "YouTube", "Google", "Instagram", "Twitter", "Facebook", "Pinterest", "Discord", "GitHub", "OneDrive", "Microsoft", "CloudFlare", "Docker", "Pixiv", "Steam", "HXD_Emby", "Telegram","GFW", "漏网之鱼", "全球直连",
+        "节点选择", "AI", "TikTok", "YouTube", "Google", "Instagram", "Twitter", "Facebook", "Pinterest", "Discord", "GitHub", "OneDrive", "Microsoft", "CloudFlare", "Docker", "Pixiv", "Steam", "EA", "Reddit", "HXD_Emby", "Telegram","GFW", "漏网之鱼", "全球直连",
         "香港_手动", "台湾_手动", "日本_手动", "新加坡_手动", "美国_手动",
         "香港_故障转移", "台湾_故障转移", "日本_故障转移", "新加坡_故障转移", "美国_故障转移"
         ] }
   ],
   "route": {
     "rules": [
+      { "ip_cidr": [ "192.168.1.0/24" ], "outbound": "全球直连" },
       { "ip_cidr": [ "192.168.2.0/24" ], "outbound": "192.168.2.0/24" },
       { "action": "sniff", "sniffer": [ "http", "tls", "quic", "dns" ] },
       { "protocol": "quic", "action": "reject" },
@@ -123,6 +127,8 @@
       { "rule_set": "geosite:docker", "outbound": "Docker" },
       { "rule_set": "geosite:pixiv", "outbound": "Pixiv" },
       { "rule_set": "geosite:steam", "outbound": "Steam" },
+      { "rule_set": "geosite:ea", "outbound": "EA" },
+      { "rule_set": "geosite:reddit", "outbound": "Reddit" },
       { "domain_suffix": "emby.as174.de", "outbound": "HXD_Emby" },
       { "rule_set": "geosite:gfw", "outbound": "GFW" },
       { "rule_set": "geoip:telegram", "outbound": "Telegram" },
@@ -147,6 +153,8 @@
       { "tag": "geosite:docker", "type": "remote", "format": "binary", "url": "https://gh-proxy.com/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/docker.srs", "download_detour": "全球直连" },
       { "tag": "geosite:pixiv", "type": "remote", "format": "binary", "url": "https://gh-proxy.com/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/pixiv.srs", "download_detour": "全球直连" },
       { "tag": "geosite:steam", "type": "remote", "format": "binary", "url": "https://gh-proxy.com/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/steam.srs", "download_detour": "全球直连" },
+      { "tag": "geosite:ea", "type": "remote", "format": "binary", "url": "https://gh-proxy.com/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/ea.srs", "download_detour": "全球直连" },
+      { "tag": "geosite:reddit", "type": "remote", "format": "binary", "url": "https://gh-proxy.com/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/reddit.srs", "download_detour": "全球直连" },
       { "tag": "geosite:gfw", "type": "remote", "format": "binary", "url": "https://gh-proxy.com/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/gfw.srs", "download_detour": "全球直连" },
       { "tag": "geoip:telegram", "type": "remote", "format": "binary", "url": "https://gh-proxy.com/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geoip/telegram.srs", "download_detour": "全球直连" },
       { "tag": "geoip:cloudflare", "type": "remote", "format": "binary", "url": "https://gh-proxy.com/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geoip/cloudflare.srs", "download_detour": "全球直连" },
