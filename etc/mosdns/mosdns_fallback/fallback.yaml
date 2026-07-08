@@ -27,44 +27,29 @@ plugins:
     args:
       - exec: $fallback_direct      # 使用 SmartDNS Direct 解析
 
-      # A/AAAA 有应答，并且至少包含 CN IP：接受（直连）
-      - matches:
-        - "qtype 1 28"      # A / AAAA 类型
-        - "has_resp"      # 有应答
-        - "resp_ip $geoip:cn"      # 包含 CN IP
-        exec: accept      # 结束分支
-
-      # A/AAAA 有应答，并且至少包含 Cloudflare IP：接受（直连）
-      - matches:
-        - "qtype 1 28"      # A / AAAA 类型
-        - "has_resp"      # 有应答
-        - "resp_ip $geoip:cloudflare"      # 包含 Cloudflare IP
-        exec: accept      # 结束分支
-
-      # A/AAAA 有应答，但完全没有 CN IP：丢弃，触发 secondary
-      - matches:
-        - "qtype 1 28"      # A / AAAA 类型
-        - "has_resp"      # 有应答
-        - "!resp_ip $geoip:cn"      # 完全没有 CN IP
-        exec: drop_resp      # 无应答：丢弃，触发 secondary
-
-      # A/AAAA：无应答丢弃，触发 secondary
-      - matches:
-        - "qtype 1 28"      # A / AAAA 类型
-        - "!has_resp"      # 无应答
-        exec: drop_resp      # 无应答：丢弃，触发 secondary
-
-      # 域名不存在：直接接受，别回滚去 proxy “再试一次”
+      # 域名不存在：直接接受，别回滚去 proxy
       - matches:
         - "rcode 3"     # NXDOMAIN
-        exec: accept      # 结束分支
+        exec: exit      # 结束分支
 
-      # 其它 qtype：无应答不回滚
+      # A/AAAA 有应答，并且至少包含 CN IP 或 Cloudflare IP：接受（直连）
+      - matches:
+        - "qtype 1 28"      # A / AAAA 类型
+        - "has_resp"      # 有应答
+        - "resp_ip $geoip:cn $geoip:cloudflare"      # 包含 CN IP 或 Cloudflare IP
+        exec: exit      # 结束分支
+
+      # A/AAAA 有应答，但完全没有 CN IP 或 Cloudflare IP：丢弃，触发 secondary
+      - matches:
+        - "qtype 1 28"      # A / AAAA 类型
+        - "has_resp"      # 有应答
+        - "!resp_ip $geoip:cn $geoip:cloudflare"      # 完全没有 CN IP 或 Cloudflare IP
+        exec: drop_resp      # 无应答：丢弃，触发 secondary
+
+      # 没有应答：丢弃，触发 secondary
       - matches:
         - "!has_resp"      # 无应答
-        exec: accept      # 结束分支
-
-      - exec: accept      # 其它情况接受（不回滚）
+        exec: drop_resp      # 无应答：丢弃，触发 secondary
 
   # fallback：如果 primary 抛错/无应答/被 drop_resp/超时，则采用 secondary
   - tag: fallback
@@ -72,5 +57,5 @@ plugins:
     args:
       primary: fallback_primary      # primary 服务器：先用 fallback_primary 逻辑判定是否接受直连结果，或丢弃触发 secondary
       secondary: fallback_proxy      # secondary 服务器：fallback_primary 判定不接受时的后备方案，直接转发到 SmartDNS Proxy
-      threshold: 1000      # primary 响应时间超过 500ms 则视为超时，触发 secondary
+      threshold: 500      # primary 响应时间超过 500ms 则视为超时，触发 secondary
       always_standby: true      # 始终保持 secondary 处于待命状态，避免触发时才启动导致的额外延迟

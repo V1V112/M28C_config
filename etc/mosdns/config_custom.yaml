@@ -10,30 +10,29 @@ include:
   - mosdns_forward/forward.yaml
   ## AdGuard 文件 ##
   - mosdns_adguard/adguard.yaml
-  ## SRS 数据列表 ##
-  - mosdns_rules_srs/srs.yaml
+  ## 数据列表 ##
+  - mosdns_rules/rules.yaml
   ## 未知域名判断（fallback） ##
   - mosdns_fallback/fallback.yaml
 
 
 plugins:
-## 自定义域名列表 ##
-
+  ## 自定义域名列表 ##
   # 列表中的域名使用 FakeIP DNS 解析
   - tag: custom_fakeip
     type: domain_set
     args:
       exps:
-        # 以 domain: 开头，域匹配。e.g: domain:google.com 会匹配自身 google.com，以及其子域名 www.google.com, maps.l.google.com 等。
-        # 以 full: 开头，完整匹配。e.g: full:google.com 只会匹配自身。
-        # 以 keyword: 开头，关键字匹配。e.g: keyword:google.com 会匹配包含这个字段的域名，如 google.com.hk, www.google.com.hk。
-        # 以 regexp: 开头，正则匹配(Golang 标准)。e.g: regexp:.+\.google\.com$。
+        # 以 domain: 开头，域匹配。例: domain:google.com 会匹配自身 google.com，以及其子域名 www.google.com, maps.l.google.com 等。
+        # 以 full: 开头，完整匹配。例: full:google.com 只会匹配自身。
+        # 以 keyword: 开头，关键字匹配。例: keyword:google.com 会匹配包含这个字段的域名，如 google.com.hk, www.google.com.hk。
+        # 以 regexp: 开头，正则匹配(Golang 标准)。例: regexp:.+\.google\.com$。
         - domain:emby.as174.de      # Emby
         - domain:javmenu.com      # Javdb
         - domain:jdbstatic.com      # Javdb
         - keyword:browserleaks      # DNS Leak Test
 
- # 列表中的域名使用 SmartDNS Direct 解析
+  # 列表中的域名使用 SmartDNS Direct 解析
   - tag: custom_direct
     type: domain_set
     args:
@@ -68,19 +67,15 @@ plugins:
       # ====== 自定义域名使用 SmartDNS Direct 解析 ====== #
       - matches: qname
           $custom_direct     # 自定义域名列表
-        exec:
-          - $smartdns_direct      # 使用 SmartDNS Direct 解析
-      - matches:
-        - has_resp      # 有应答
+        exec: $smartdns_direct      # 使用 SmartDNS Direct 解析
+      - matches: has_resp      # 有应答
         exec: exit      # 结束分支
 
       # ====== 自定义域名使用 FakeIP DNS 解析 ====== #
       - matches: qname
           $custom_fakeip      # 自定义域名列表
-        exec:
-          - $fakeip_or_proxy      # 使用 FakeIP DNS 故障转移解析：如果 FakeIP DNS 没有任何应答、超时、异常，才走 smartdns_proxy
-      - matches:
-        - has_resp      # 有应答
+        exec: $fakeip_or_proxy      # 使用 FakeIP DNS 故障转移解析：如果 FakeIP DNS 没有任何应答、超时、异常，才走 smartdns_proxy
+      - matches: has_resp      # 有应答
         exec: exit      # 结束分支
 
       # ====== GEOSITE 规则使用 FakeIP DNS 解析 ====== #
@@ -91,44 +86,34 @@ plugins:
           $geosite:pikpak
           $geosite:pinterest
           $geosite:cloudflare
-        exec:
-          - $fakeip_or_proxy      # 使用 FakeIP DNS 故障转移解析：如果 FakeIP DNS 没有任何应答、超时、异常，才走 smartdns_proxy
-      - matches:
-        - has_resp      # 有应答
+        exec: $fakeip_or_proxy      # 使用 FakeIP DNS 故障转移解析：如果 FakeIP DNS 没有任何应答、超时、异常，才走 smartdns_proxy
+      - matches: has_resp      # 有应答
         exec: exit      # 结束分支
 
       # ====== 使用 SmartDNS Direct 解析 ====== #
       - matches: qname
           $geosite:direct      # 直连域名列表
-        exec:
-          - $smartdns_direct      # 使用 SmartDNS Direct 解析
-      - matches:
-        - has_resp      # 有应答
+        exec: $smartdns_direct      # 使用 SmartDNS Direct 解析
+      - matches: has_resp      # 有应答
         exec: exit      # 结束分支
 
       # ====== 使用 FakeIP DNS 解析 ====== #
       - matches: qname
           $geosite:gfw      # GFW 规则列表
-        exec:
-          - $fakeip_or_proxy      # 使用 FakeIP DNS 故障转移解析：如果 FakeIP DNS 没有任何应答、超时、异常，才走 smartdns_proxy
-      - matches:
-        - has_resp      # 有应答
+        exec: $fakeip_or_proxy      # 使用 FakeIP DNS 故障转移解析：如果 FakeIP DNS 没有任何应答、超时、异常，才走 smartdns_proxy
+      - matches: has_resp      # 有应答
         exec: exit      # 结束分支
 
       # ====== 使用 SmartDNS Proxy 解析 ====== #
       - matches: qname
           $geosite:proxy      # 代理域名列表
-        exec:
-          - $smartdns_proxy      # 使用 SmartDNS Proxy 解析
-      - matches:
-        - has_resp      # 有应答
+        exec: $smartdns_proxy      # 使用 SmartDNS Proxy 解析
+      - matches: has_resp      # 有应答
         exec: exit      # 结束分支
 
       # ====== 解析未知域名 ====== #      可选：$smartdns_direct / $smartdns_proxy / $fakeip_or_proxy / $fakeip_dns / $fallback 根据实际情况调整顺序和分组
-      - exec:
-        - $fallback      # 使用 fallback 解析
-      - matches:
-        - has_resp      # 有应答
+      - exec: $fallback      # 使用 fallback 解析
+      - matches: has_resp      # 有应答
         exec: exit      # 结束分支
 
 # 主运行序列（Main Sequence）是 DNS 查询的入口，定义了查询的整体处理流程。可以包含多个步骤，每个步骤可以是插件执行或条件判断。
@@ -149,8 +134,7 @@ plugins:
           - exit      # 结束分支
 
       # ====== 屏蔽 AdGuard 在线广告域名 ====== # 
-      - matches: qname
-          $adguard      # AdGuard 在线规则插件
+      - matches: qname $adguard      # AdGuard 在线规则插件
         exec:
           - reject 0      # NOERROR / 返回空响应
           - exit      # 结束分支

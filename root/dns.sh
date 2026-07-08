@@ -1,7 +1,7 @@
 #!/bin/sh
 # OpenWrt / ImmortalWrt DNS 服务手动控制脚本
 # 控制 smartdns 和 mosdns 的启动、停止、重启、状态
-# 支持查看和修改 /etc/smartdns/custom.conf 中的 -subnet 参数
+# 支持查看和修改 /etc/smartdns/custom.conf 中的 -subnet 参数和 ISP DNS
 # 不控制开机自启 enable/disable
 
 SMARTDNS="/etc/init.d/smartdns"
@@ -369,8 +369,270 @@ change_subnet_config() {
     esac
 }
 
+
+show_isp_dns_config() {
+    check_smartdns_conf || return
+
+    line
+    printf "%b\n" "${MAGENTA}当前 $SMARTDNS_CONF 中已启用的 ISP DNS 配置：${RESET}"
+    line
+
+    awk -v green="$GREEN" -v yellow="$YELLOW" -v reset="$RESET" '
+    BEGIN {
+        in_isp = 0
+        found_section = 0
+        found_dns = 0
+    }
+
+    /^[[:space:]]*#[[:space:]]*ISP[[:space:]]*$/ {
+        in_isp = 1
+        found_section = 1
+        next
+    }
+
+    in_isp && /^[[:space:]]*$/ {
+        in_isp = 0
+        next
+    }
+
+    in_isp && /^[[:space:]]*###/ {
+        in_isp = 0
+    }
+
+    in_isp && /^[[:space:]]*#/ {
+        next
+    }
+
+    in_isp && $1 == "server" {
+        found_dns = 1
+        printf("%s第 %d 行：%s%s\n", green, NR, $2, reset)
+        printf("%s  %s%s\n\n", yellow, $0, reset)
+    }
+
+    END {
+        if (found_section == 0) {
+            print "未发现 # ISP 标记。"
+        } else if (found_dns == 0) {
+            print "未发现已启用的 ISP DNS server 配置。"
+        }
+    }
+    ' "$SMARTDNS_CONF"
+
+    line
+}
+
+validate_ipv4() {
+    IP="$1"
+
+    echo "$IP" | awk -F'.' '
+    NF != 4 {
+        exit 1
+    }
+
+    {
+        for (i = 1; i <= 4; i++) {
+            if ($i !~ /^[0-9]+$/) {
+                exit 1
+            }
+
+            if ($i < 0 || $i > 255) {
+                exit 1
+            }
+        }
+    }
+    '
+}
+
+count_isp_dns_config() {
+    awk '
+    BEGIN {
+        in_isp = 0
+        count = 0
+    }
+
+    /^[[:space:]]*#[[:space:]]*ISP[[:space:]]*$/ {
+        in_isp = 1
+        next
+    }
+
+    in_isp && /^[[:space:]]*$/ {
+        in_isp = 0
+        next
+    }
+
+    in_isp && /^[[:space:]]*###/ {
+        in_isp = 0
+    }
+
+    in_isp && /^[[:space:]]*#/ {
+        next
+    }
+
+    in_isp && $1 == "server" {
+        count++
+    }
+
+    END {
+        print count + 0
+    }
+    ' "$SMARTDNS_CONF"
+}
+
+change_isp_dns_config() {
+    check_smartdns_conf || return
+
+    line
+    printf "%b\n" "${BOLD}${MAGENTA}修改 smartdns custom.conf 中的 ISP DNS${RESET}"
+    line
+
+    show_isp_dns_config
+
+    if ! grep -Eq '^[[:space:]]*#[[:space:]]*ISP[[:space:]]*$' "$SMARTDNS_CONF"; then
+        error "未找到 # ISP 标记，已取消修改。"
+        warn "请在 custom.conf 中保留一行：# ISP"
+        return
+    fi
+
+    OLD_COUNT="$(count_isp_dns_config)"
+
+    printf "%b\n" "${BLUE}请输入新的 ISP DNS，多个 DNS 用空格隔开。${RESET}"
+    printf "%b\n" "${YELLOW}示例：120.80.80.80 221.5.88.88${RESET}"
+    printf "%b" "${MAGENTA}新的 ISP DNS：${RESET}"
+    read NEW_ISP_DNS_LIST
+
+    if [ -z "$NEW_ISP_DNS_LIST" ]; then
+        warn "输入为空，已取消修改。"
+        return
+    fi
+
+    NEW_COUNT=0
+    for DNS in $NEW_ISP_DNS_LIST
+    do
+        if ! validate_ipv4 "$DNS"; then
+            error "DNS 格式错误：$DNS"
+            warn "请输入 IPv4 DNS，示例：120.80.80.80"
+            return
+        fi
+        NEW_COUNT=$((NEW_COUNT + 1))
+    done
+
+    line
+    printf "%b\n" "${YELLOW}将把 # ISP 下方的启用 server 行替换为：${RESET}"
+    for DNS in $NEW_ISP_DNS_LIST
+    do
+        printf "%b\n" "${GREEN}server $DNS -group direct -exclude-default-group${RESET}"
+    done
+    printf "%b\n" "${YELLOW}原 ISP DNS 数量：${RESET}${GREEN}$OLD_COUNT${RESET}"
+    printf "%b\n" "${YELLOW}新 ISP DNS 数量：${RESET}${GREEN}$NEW_COUNT${RESET}"
+    line
+    printf "%b" "${YELLOW}确认修改？[y/N]：${RESET}"
+    read CONFIRM
+
+    case "$CONFIRM" in
+        y|Y|yes|YES)
+            ;;
+        *)
+            warn "已取消修改。"
+            return
+            ;;
+    esac
+
+    BACKUP="${SMARTDNS_CONF}.bak.$(date +%Y%m%d-%H%M%S)"
+    TMP="/tmp/smartdns_custom_conf_isp.$$"
+
+    cp "$SMARTDNS_CONF" "$BACKUP" || {
+        error "备份失败，已取消修改。"
+        return
+    }
+
+    awk -v dns_list="$NEW_ISP_DNS_LIST" '
+    function print_new_dns(    n, arr, i) {
+        n = split(dns_list, arr, /[[:space:]]+/)
+        for (i = 1; i <= n; i++) {
+            if (arr[i] != "") {
+                print "server " arr[i] " -group direct -exclude-default-group"
+            }
+        }
+    }
+
+    BEGIN {
+        in_isp = 0
+        found_section = 0
+    }
+
+    /^[[:space:]]*#[[:space:]]*ISP[[:space:]]*$/ {
+        print
+        print_new_dns()
+        in_isp = 1
+        found_section = 1
+        next
+    }
+
+    in_isp && /^[[:space:]]*$/ {
+        in_isp = 0
+        print
+        next
+    }
+
+    in_isp && /^[[:space:]]*###/ {
+        in_isp = 0
+        print
+        next
+    }
+
+    in_isp {
+        next
+    }
+
+    {
+        print
+    }
+
+    END {
+        if (found_section == 0) {
+            exit 2
+        }
+    }
+    ' "$SMARTDNS_CONF" > "$TMP" || {
+        error "生成临时配置失败，已取消修改。"
+        warn "备份文件保存在：$BACKUP"
+        rm -f "$TMP"
+        return
+    }
+
+    cat "$TMP" > "$SMARTDNS_CONF" || {
+        error "写入配置失败。"
+        warn "备份文件保存在：$BACKUP"
+        rm -f "$TMP"
+        return
+    }
+
+    rm -f "$TMP"
+
+    line
+    success "ISP DNS 修改完成。"
+    printf "%b\n" "${BLUE}备份文件：$BACKUP${RESET}"
+    line
+
+    show_isp_dns_config
+
+    printf "%b" "${YELLOW}是否立即重启 smartdns 让配置生效？[y/N]：${RESET}"
+    read RESTART_CONFIRM
+
+    case "$RESTART_CONFIRM" in
+        y|Y|yes|YES)
+            restart_smartdns
+            ;;
+        *)
+            warn "未重启 smartdns。"
+            info "你可以之后手动选择菜单中的 smartdns 重启选项。"
+            ;;
+    esac
+}
+
+
 show_menu() {
-    clear
+    [ -t 1 ] && clear
     title "OpenWrt DNS 服务控制脚本"
     line
     printf "%b\n" "${GREEN}1. 启动 smartdns + mosdns${RESET}"
@@ -388,6 +650,8 @@ show_menu() {
     line
     printf "%b\n" "${MAGENTA}11. 查看 smartdns custom.conf 中的 -subnet${RESET}"
     printf "%b\n" "${MAGENTA}12. 修改 smartdns custom.conf 中的 -subnet${RESET}"
+    printf "%b\n" "${MAGENTA}13. 查看 smartdns custom.conf 中的 ISP DNS${RESET}"
+    printf "%b\n" "${MAGENTA}14. 修改 smartdns custom.conf 中的 ISP DNS${RESET}"
     line
     printf "%b\n" "${RED}0. 退出${RESET}"
     line
@@ -436,6 +700,12 @@ do
             ;;
         12)
             change_subnet_config
+            ;;
+        13)
+            show_isp_dns_config
+            ;;
+        14)
+            change_isp_dns_config
             ;;
         0)
             success "已退出。"
