@@ -1,69 +1,58 @@
 plugins:
-## SmartDNS 组 ##
-  - tag: smartdns_direct
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # 带缓存的 Direct 解析入口
+  # 缓存未命中时，才进入对应上游。
+  # 主动刷新也只会重新执行本组后续解析链，不会串到另一组。
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  - tag: Direct
     type: forward
     args:
-      concurrent: 1
+      concurrent: 2
       upstreams:
-        - addr: udp://127.0.0.1:531      # SmartDNS Direct
-#        - addr: 223.5.5.5:53
+        - tag: 广东联通_DNS_1
+          addr: udp://120.80.80.80
+        - tag: 广东联通_DNS_2
+          addr: udp://221.5.88.88
 
-  - tag: smartdns_proxy
-    type: forward
-    args:
-      concurrent: 1
-      upstreams:
-        - addr: udp://127.0.0.1:532      # SmartDNS Proxy
-#        - addr: 1.1.1.1:853
-
-## FakeIP DNS ##
-  - tag: fakeip_dns
-    type: forward
-    args:
-      concurrent: 1
-      upstreams:
-        - addr: udp://127.0.0.1:5300      # FakeIP DNS
-
-  # NXDOMAIN  = 域名确实不存在
-  # SERVFAIL  = 服务器解析失败
-  # REFUSED   = 服务器拒绝解析
-  # FakeIP 主解析序列：只接受真正有效的 FakeIP 应答；异常/无应答则丢弃，交给 fallback 触发 smartdns_proxy。
-  - tag: fakeip_primary
+  - tag: cache_direct
     type: sequence
     args:
-      - exec: $fakeip_dns      # 使用 FakeIP DNS 解析
-
-      # 域名不存在：直接接受，避免回滚到 SmartDNS Proxy 再试一次
+      - exec: $dns_cache_direct
       - matches:
-          - "rcode 3"     # NXDOMAIN / 域名不存在
-        exec: exit      # 结束分支
+          - "!has_resp"
+        exec: $Direct
 
-      # 上游明确异常：丢弃应答，触发 fallback 的 secondary
-      - matches:
-          - "rcode 2"     # SERVFAIL / 服务器失败 / 上游解析失败
-        exec: drop_resp      # 上游明确拒绝：丢弃应答，触发 fallback 的 secondary
-      - matches:
-          - "rcode 5"     # REFUSED / 拒绝 / 上游拒绝解析
-        exec: drop_resp      # 上游明确拒绝：丢弃应答，触发 fallback 的 secondary
-
-      # A / AAAA 有应答：接受 FakeIP 结果
-      - matches:
-          - "qtype 1 28"  # A / AAAA
-          - has_resp      # 有应答
-        exec: exit       # 结束分支
-
-      # 没有应答：丢弃，触发 fallback 的 secondary
-      - matches:
-          - "!has_resp"      # 无应答
-        exec: drop_resp      # 无应答：丢弃，触发 fallback 的 secondary
-
-  # FakeIP 优先，失败/无应答/超时/被 drop_resp 时回退到 smartdns_proxy。
-  - tag: fakeip_or_proxy
-    type: fallback
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # 带缓存的 Overseas 解析入口
+  # 缓存未命中时，才进入对应上游。
+  # 主动刷新也只会重新执行本组后续解析链，不会串到另一组。
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  - tag: Overseas
+    type: forward
     args:
-      primary: fakeip_dns      # 首选 FakeIP 主解析序列
-      secondary: smartdns_proxy      # 备选 SmartDNS Proxy 解析
-      threshold: 1000      # primary 响应时间超过 500ms 则视为超时，触发 secondary
-      always_standby: false      # 始终保持 secondary 处于待命状态，避免触发时才启动导致的额外延迟
-      primary_failure_only: true      # 当 primary 返回“无有效响应/失败”后，触发 secondary
-#      secondary_accept_threshold: 100
+      concurrent: 2
+      upstreams:
+        - tag: 果冻DNS
+          addr: tls://t627536994.6.00p.net
+        - tag: 自建DNS_US
+          addr: https://dns2ecs.sharedrive.cc/V1V1V112
+          dial_addr: 23.224.49.102
+
+  - tag: cache_overseas
+    type: sequence
+    args:
+      - exec: $dns_cache_overseas
+      - matches:
+          - "!has_resp"
+        exec: $Overseas
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # FakeIP DNS
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  - tag: FakeDNS
+    type: forward
+    args:
+      concurrent: 1
+      upstreams:
+        - tag: SingBox_FakeDNS
+          addr: udp://127.0.0.1:5300

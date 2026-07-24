@@ -7,6 +7,7 @@
 SMARTDNS="/etc/init.d/smartdns"
 MOSDNS="/etc/init.d/mosdns"
 SMARTDNS_CONF="/etc/smartdns/custom.conf"
+MOSDNS_CONF_DIR="/etc/mosdns"
 
 # ========= 颜色定义 =========
 # 如果不是终端环境，则自动关闭颜色，避免重定向日志时出现乱码
@@ -113,6 +114,70 @@ restart_mosdns() {
     warn "正在重启 mosdns..."
     "$MOSDNS" restart
     success "mosdns 重启命令已执行。"
+}
+
+restart_mosdns_clear_cache() {
+    check_service "$MOSDNS" || return
+
+    title "正在重启 mosdns 并清空缓存..."
+    line
+
+    warn "正在停止 mosdns..."
+    "$MOSDNS" stop
+
+    info "正在等待 mosdns 完全停止..."
+    WAIT_COUNT=0
+    while pidof mosdns >/dev/null 2>&1
+    do
+        WAIT_COUNT=$((WAIT_COUNT + 1))
+
+        if [ "$WAIT_COUNT" -ge 15 ]; then
+            error "等待 mosdns 停止超时。"
+            warn "为避免运行中删除缓存，已取消删除 dump 文件和重新启动。"
+            return 1
+        fi
+
+        sleep 1
+    done
+    success "mosdns 已完全停止。"
+
+    if [ ! -d "$MOSDNS_CONF_DIR" ]; then
+        error "未找到 mosdns 配置目录：$MOSDNS_CONF_DIR"
+        warn "未删除缓存文件，正在尝试重新启动 mosdns。"
+    else
+        DUMP_COUNT="$(find "$MOSDNS_CONF_DIR" -type f -name '*.dump' 2>/dev/null | wc -l | tr -d ' ')"
+        [ -n "$DUMP_COUNT" ] || DUMP_COUNT=0
+
+        if [ "$DUMP_COUNT" -gt 0 ]; then
+            info "发现 $DUMP_COUNT 个 dump 缓存文件，正在删除..."
+            find "$MOSDNS_CONF_DIR" -type f -name '*.dump' -exec rm -f {} \; 2>/dev/null
+
+            REMAINING_DUMP_COUNT="$(find "$MOSDNS_CONF_DIR" -type f -name '*.dump' 2>/dev/null | wc -l | tr -d ' ')"
+            [ -n "$REMAINING_DUMP_COUNT" ] || REMAINING_DUMP_COUNT=0
+
+            if [ "$REMAINING_DUMP_COUNT" -eq 0 ]; then
+                success "mosdns dump 缓存文件已全部删除。"
+            else
+                error "仍有 $REMAINING_DUMP_COUNT 个 dump 文件删除失败。"
+                warn "将继续尝试启动 mosdns。"
+            fi
+        else
+            warn "未发现 dump 缓存文件，无需删除。"
+        fi
+    fi
+
+    info "正在启动 mosdns..."
+    "$MOSDNS" start
+    sleep 1
+
+    if pidof mosdns >/dev/null 2>&1; then
+        success "mosdns 已启动，缓存清理完成。"
+    else
+        error "mosdns 启动失败，请检查 mosdns 日志。"
+        return 1
+    fi
+
+    line
 }
 
 start_all() {
@@ -647,11 +712,12 @@ show_menu() {
     printf "%b\n" "${GREEN}8. 只启动 mosdns${RESET}"
     printf "%b\n" "${RED}9. 只停止 mosdns${RESET}"
     printf "%b\n" "${YELLOW}10. 只重启 mosdns${RESET}"
+    printf "%b\n" "${YELLOW}11. 重启 mosdns 并清空缓存${RESET}"
     line
-    printf "%b\n" "${MAGENTA}11. 查看 smartdns custom.conf 中的 -subnet${RESET}"
-    printf "%b\n" "${MAGENTA}12. 修改 smartdns custom.conf 中的 -subnet${RESET}"
-    printf "%b\n" "${MAGENTA}13. 查看 smartdns custom.conf 中的 ISP DNS${RESET}"
-    printf "%b\n" "${MAGENTA}14. 修改 smartdns custom.conf 中的 ISP DNS${RESET}"
+    printf "%b\n" "${MAGENTA}12. 查看 smartdns custom.conf 中的 -subnet${RESET}"
+    printf "%b\n" "${MAGENTA}13. 修改 smartdns custom.conf 中的 -subnet${RESET}"
+    printf "%b\n" "${MAGENTA}14. 查看 smartdns custom.conf 中的 ISP DNS${RESET}"
+    printf "%b\n" "${MAGENTA}15. 修改 smartdns custom.conf 中的 ISP DNS${RESET}"
     line
     printf "%b\n" "${RED}0. 退出${RESET}"
     line
@@ -696,15 +762,18 @@ do
             restart_mosdns
             ;;
         11)
-            show_subnet_config
+            restart_mosdns_clear_cache
             ;;
         12)
-            change_subnet_config
+            show_subnet_config
             ;;
         13)
-            show_isp_dns_config
+            change_subnet_config
             ;;
         14)
+            show_isp_dns_config
+            ;;
+        15)
             change_isp_dns_config
             ;;
         0)

@@ -1,33 +1,63 @@
 plugins:
-
-  ## FallBack 组 ##
-
-  # fallback 的 primary 服务器：转发至 SmartDNS direct 组（127.0.0.1:531）
-  - tag: fallback_direct
-    type: forward
-    args:
-      concurrent: 1
-      upstreams:
-        - addr: 127.0.0.1:531      # SmartDNS Direct
-
-  # fallback 的 secondary 服务器：转发至 SmartDNS proxy 组（127.0.0.1:532）
-  - tag: fallback_proxy
-    type: forward
-    args:
-      concurrent: 1
-      upstreams:
-        - addr: 127.0.0.1:532      # SmartDNS Proxy
-
-  # fallback 的 primary 判定逻辑：
-  # - 先用 direct 解析
-  # - 若 A/AAAA 结果包含 CN IP => 直连
-  # - 若 A/AAAA 结果完全不含 CN IP / 无应答 => 丢弃应答，触发 secondary（proxy）
-  - tag: fallback_primary
+  # ============================================================
+  ## FakeIP -> Overseas 故障转移组 ##
+  # NXDOMAIN  = 域名确实不存在
+  # SERVFAIL  = 服务器解析失败
+  # REFUSED   = 服务器拒绝解析
+  # FakeIP 主解析序列：只接受真正有效的 FakeIP 应答；异常/无应答则丢弃，交给 fallback 触发 smartdns_overseas。
+  # ============================================================
+  - tag: fakeip_primary
     type: sequence
     args:
-      - exec: $fallback_direct      # 使用 SmartDNS Direct 解析
+      - exec: $FakeDNS      # 使用 FakeDNS 解析
 
-      # 域名不存在：直接接受，别回滚去 proxy
+      # 域名不存在：直接接受，避免回滚到 SmartDNS Overseas 再试一次
+      - matches:
+          - "rcode 3"     # NXDOMAIN / 域名不存在
+        exec: exit      # 结束分支
+
+      # 上游明确异常：丢弃应答，触发 fallback 的 secondary
+      - matches:
+          - "rcode 2"     # SERVFAIL / 服务器失败 / 上游解析失败
+        exec: drop_resp      # 上游明确拒绝：丢弃应答，触发 fallback 的 secondary
+      - matches:
+          - "rcode 5"     # REFUSED / 拒绝 / 上游拒绝解析
+        exec: drop_resp      # 上游明确拒绝：丢弃应答，触发 fallback 的 secondary
+
+      # A / AAAA 有应答：接受 FakeIP 结果
+      - matches:
+          - "qtype 1 28"  # A / AAAA
+          - has_resp      # 有应答
+        exec: exit       # 结束分支
+
+      # 没有应答：丢弃，触发 fallback 的 secondary
+      - matches:
+          - "!has_resp"      # 无应答
+        exec: drop_resp      # 无应答：丢弃，触发 fallback 的 secondary
+
+  - tag: fakeip_or_overseas
+    type: fallback
+    args:
+      primary: FakeDNS      # 首选 FakeIP 主解析序列
+      secondary: cache_overseas      # 备选  cache_overseas 解析
+      threshold: 1000      # primary 响应时间超过 500ms 则视为超时，触发 secondary
+      always_standby: false      # 始终保持 secondary 处于待命状态，避免触发时才启动导致的额外延迟
+      primary_failure_only: true      # 当 primary 返回“无有效响应/失败”后，触发 secondary。为 true 时，always_standby 将被忽略，secondary 不会预先并行运行。
+#      secondary_accept_threshold: 100      # 备用结果接受延迟，单位毫秒；仅在上述两项均为 true 时生效，当前配置不生效    
+
+  # ============================================================
+  # FallBack 组 #
+  # fallback 的 primary 判定逻辑：
+  # - 先查询 Direct 独立缓存；未命中时才访问 SmartDNS Direct
+  # - 若 A/AAAA 结果包含 CN IP 或 Cloudflare IP => 接受 direct 结果
+  # - 若 A/AAAA 结果完全不含上述 IP / 无应答 => 丢弃，触发 Overseas
+  # ============================================================
+  - tag: fallback_direct
+    type: sequence
+    args:
+      - exec: $cache_direct      # 使用 Direct 独立缓存；未命中时再交给 SmartDNS Direct
+
+      # 域名不存在：直接接受，别回滚去 overseas
       - matches:
         - "rcode 3"     # NXDOMAIN
         exec: exit      # 结束分支
@@ -51,11 +81,13 @@ plugins:
         - "!has_resp"      # 无应答
         exec: drop_resp      # 无应答：丢弃，触发 secondary
 
-  # fallback：如果 primary 抛错/无应答/被 drop_resp/超时，则采用 secondary
+  # fallback：primary 不被接受时，secondary 使用 Overseas 独立缓存。
+  # 同一个域名可以在 Direct 与 Overseas 两套缓存中分别保存不同结果，
+  # 两边的内存缓存、主动刷新状态和 dump 文件完全独立。
   - tag: fallback
     type: fallback
     args:
-      primary: fallback_primary      # primary 服务器：先用 fallback_primary 逻辑判定是否接受直连结果，或丢弃触发 secondary
-      secondary: fallback_proxy      # secondary 服务器：fallback_primary 判定不接受时的后备方案，直接转发到 SmartDNS Proxy
+      primary: fallback_direct      # primary 服务器：先用 fallback_direct 逻辑判定是否接受直连结果，或丢弃触发 secondary
+      secondary: cache_overseas      # secondary 服务器：fallback_direct 判定不接受时的后备方案，直接转发到 cache_overseas
       threshold: 500      # primary 响应时间超过 500ms 则视为超时，触发 secondary
       always_standby: true      # 始终保持 secondary 处于待命状态，避免触发时才启动导致的额外延迟

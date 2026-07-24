@@ -16,11 +16,11 @@ plugins:
     args:
       local_config: "mosdns_rules/json/direct.json"
 
-  ## 代理域名列表 ##
-  - tag: geosite:proxy
+  ## 国外域名列表 ##
+  - tag: geosite:overseas
     type: sd_set
     args:
-      local_config: "mosdns_rules/json/proxy.json"
+      local_config: "mosdns_rules/json/overseas.json"
 
   ## GFW 域名列表 ##
   - tag: geosite:gfw

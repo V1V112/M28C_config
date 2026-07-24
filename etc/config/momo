@@ -6,7 +6,7 @@ config config 'config'
 	option scheduled_restart_cron '0 3 * * *'
 	option test_profile '1'
 	option core_only '1'
-	option profile 'file:M28C_singbox_1.14.json'
+	option profile 'file:M28C_singbox_1.14_smart.json'
 
 config procd 'procd'
 	option fast_reload '0'
