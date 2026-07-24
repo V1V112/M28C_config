@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -eu
+
+if ! git diff --cached --name-only --diff-filter=ACMR -- |
+    grep -Eq '(^|/)\.gitignore$'; then
+    exit 0
+fi
+
+tracked_ignored="$(git ls-files -ci --exclude-standard)"
+
+if [ -z "$tracked_ignored" ]; then
+    exit 0
+fi
+
+echo "The following ignored files will stop being tracked and remain on this computer:"
+printf '%s\n' "$tracked_ignored"
+
+git ls-files -ci --exclude-standard -z |
+while IFS= read -r -d '' file; do
+    git rm --cached --ignore-unmatch -- "$file"
+done
+
+echo "Ignored files were removed from the Git index; their local copies were kept."
