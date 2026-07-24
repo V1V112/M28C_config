@@ -9,10 +9,10 @@ config defaults
 
 config zone
 	option name 'lan'
-	list network 'lan'
 	option input 'ACCEPT'
 	option output 'ACCEPT'
 	option forward 'ACCEPT'
+	list network 'lan'
 
 config zone
 	option name 'wan'
@@ -123,11 +123,6 @@ config rule
 	option proto 'udp'
 	option target 'ACCEPT'
 
-config include 'momo'
-	option type 'script'
-	option path '/etc/momo/scripts/firewall_include.sh'
-	option fw4_compatible '1'
-
 config rule
 	option name 'at_module_wan_block'
 	option src 'wan'
@@ -145,4 +140,9 @@ config rule
 	option dest_port '8765'
 	option target 'REJECT'
 	option enabled '1'
+
+config include 'momo'
+	option type 'script'
+	option path '/etc/momo/scripts/firewall_include.sh'
+	option fw4_compatible '1'
 

@@ -27,6 +27,9 @@ config interface 'Modem_v4'
 	option device 'eth1'
 	option peerdns '0'
 	option multipath 'off'
+	option metric '0'
+	option defaultroute '1'
+	option norelease '1'
 
 config interface 'Modem_v6'
 	option proto 'dhcpv6'
@@ -37,6 +40,8 @@ config interface 'Modem_v6'
 	option peerdns '0'
 	option norelease '1'
 	option multipath 'off'
+	option metric '0'
+	option auto '1'
 
 config device
 	option name 'eth1'

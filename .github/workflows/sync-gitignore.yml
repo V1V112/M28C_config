@@ -1,0 +1,41 @@
+name: Stop tracking ignored files
+
+on:
+  push:
+    paths:
+      - ".gitignore"
+      - "**/.gitignore"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-gitignore:
+    if: github.ref_type == 'branch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the triggering branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Stop tracking ignored files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          while IFS= read -r -d '' file; do
+            git rm --cached --ignore-unmatch -- "$file"
+          done < <(git ls-files -ci --exclude-standard -z)
+
+          if git diff --cached --quiet; then
+            echo "No tracked ignored files need to be removed."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: stop tracking ignored files"
+          git push origin "HEAD:${GITHUB_REF}"

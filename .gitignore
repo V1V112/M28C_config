@@ -1,0 +1,11 @@
+# SmartDNS 配置
+/etc/smartdns/
+/etc/config/smartdns
+
+# at-webserver 配置
+/etc/config/at-webserver
+
+# Qmodem 配置
+/etc/config/qmodem
+/etc/config/ubus-at-daemon
+/etc/config/sms_forwarder
