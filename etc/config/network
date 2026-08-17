@@ -20,7 +20,7 @@ config interface 'lan'
 	option ip6assign '64'
 	option ipv6 '1'
 	list dns '127.0.0.1'
-	list ipaddr '192.168.1.1/24'
+	list ipaddr '10.0.0.1/24'
 
 config interface 'Modem_v4'
 	option proto 'dhcp'
