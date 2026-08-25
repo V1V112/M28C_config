@@ -9,5 +9,6 @@ config mt5700m 'settings'
 config connection 'connection'
 	option enabled '1'
 	option pdp_type 'ipv4v6'
-	option metric '0'
+	option metric '1'
+	option management_mode 'external'
 
