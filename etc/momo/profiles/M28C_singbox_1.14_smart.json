@@ -37,7 +37,7 @@
   ],
   "providers": [
     { "tag": "FlareiX",
-      "url": "https://156.245.232.84:8443/api/proxy/open/subscription?passwd=81bc78dc-c385-00a8-81bc-78dcc38500a8&client=CLASH",
+      "url": "https://156.245.232.84:8443/api/proxy/open/subscription?passwd=98646b38-cd76-7962-9864-6b38cd767962&client=CLASH",
       "type": "remote", "health_check": { "enabled": false, "url": "https://www.gstatic.com/generate_204", "interval": "10m", "timeout": "3s" }, "http_client": "HTTP 客户端", "update_interval": "12h",
       "exclude": "官网|剩余|流量|套餐|免费|订阅|全球直连|到期时间|GB|Expire Date|Traffic|ExpireDate"
     },
@@ -48,6 +48,8 @@
     }
   ],
   "outbounds": [
+    { "tag":"新加坡专线", "type":"shadowsocks", "server":"iepllat.outline58.com", "server_port":39510, "method":"chacha20-ietf-poly1305", "password":"9ea6235b-75f5-479b-a0bb-c429f366eeed"},
+    { "tag":"日本专线", "type":"shadowsocks", "server":"iepllat.outline58.com", "server_port":39509, "method":"chacha20-ietf-poly1305", "password":"9ea6235b-75f5-479b-a0bb-c429f366eeed"},
     { "tag": "节点选择", "type": "selector", "default": "香港_智能", "outbounds": [ "香港_智能", "香港_故障转移", "台湾_智能", "台湾_故障转移", "日本_智能", "日本_故障转移", "新加坡_智能", "新加坡_故障转移", "美国_智能", "美国_故障转移", "全部节点_手动", "全部节点_故障转移" ] },
     { "tag": "AI", "type": "selector", "default": "新加坡_故障转移", "outbounds": [ "节点选择", "香港_智能", "香港_故障转移", "台湾_智能", "台湾_故障转移", "日本_智能", "日本_故障转移", "新加坡_智能", "新加坡_故障转移", "美国_智能", "美国_故障转移", "全部节点_手动", "全部节点_故障转移" ] },
     { "tag": "TikTok", "type": "selector", "default": "新加坡_智能", "outbounds": [ "节点选择", "香港_智能", "香港_故障转移", "台湾_智能", "台湾_故障转移", "日本_智能", "日本_故障转移", "新加坡_智能", "新加坡_故障转移", "美国_智能", "美国_故障转移", "全部节点_手动", "全部节点_故障转移" ] },
@@ -75,24 +77,24 @@
 
     { "tag": "香港_手动", "type": "selector", "outbounds": null, "use_all_providers": true, "include" :"🇭🇰|HK|hk|香港|港|(?i)Hong" },
     { "tag": "台湾_手动", "type": "selector", "outbounds": null, "use_all_providers": true, "include": "🇹🇼|TW|tw|台湾|台|(?i)Tai" },
-    { "tag": "日本_手动", "type": "selector", "outbounds": null, "use_all_providers": true, "include": "🇯🇵|JP|jp|日本|日|(?i)Japa" },
-    { "tag": "新加坡_手动", "type": "selector", "outbounds": null, "use_all_providers": true, "include": "🇸🇬|SG|sg|新加坡|狮|(?i)Sing" },
+    { "tag": "日本_手动", "type": "selector", "outbounds": ["日本专线"], "use_all_providers": true, "include": "🇯🇵|JP|jp|日本|日|(?i)Japa" },
+    { "tag": "新加坡_手动", "type": "selector", "outbounds": ["新加坡专线"], "use_all_providers": true, "include": "🇸🇬|SG|sg|新加坡|狮|(?i)Sing" },
     { "tag": "美国_手动", "type": "selector", "outbounds": null, "use_all_providers": true, "include": "🇺🇸|US|USA|us|usa|美国|美|(?i)Uni|(?i)Amer" },
 
     { "tag": "全部节点_手动", "type": "selector", "outbounds": null, "use_all_providers": true, "exclude": "网站|流量|地址|剩余|过期|免费|时间|有效|Traffic|ExpireDate|GB|Expire Date" },
-    { "tag": "全部节点_故障转移", "type": "urltest", "interval": "5m", "outbounds": null, "use_all_providers": true, "exclude": "网站|流量|地址|剩余|过期|免费|时间|有效|Traffic|ExpireDate|GB|Expire Date", "fallback": {"enabled": true} },
+    { "tag": "全部节点_故障转移", "type": "urltest", "interval": "5m", "outbounds": null, "use_all_providers": true, "exclude": "网站|流量|地址|剩余|过期|免费|时间|有效|Traffic|ExpireDate|GB|Expire Date" },
 
-    { "tag": "香港_智能", "type": "adaptive_pool", "outbounds": null, "providers": ["FlareiX"], "use_all_providers": false, "include": "🇭🇰|HK|hk|香港|港|(?i)Hong", "probe": { "url": "https://www.gstatic.com/generate_204", "coverage_interval": "10m", "timeout": "5s", "concurrency": 8, "queue_size": 4096 }, "policy": { "default": "adaptive", "strict_lease_ttl": "30m", "adaptive_lease_ttl": "10m", "max_leases": 8192, "max_attempts": 2, "attempt_timeout": "4s", "hedge_delay": "450ms", "manual_failure": "fallback", "ai_ipv6_policy": "allow" }, "state": { "path": "adaptive-state/hk", "retention": "168h", "max_entries": 4096 } },
-    { "tag": "台湾_智能", "type": "adaptive_pool", "outbounds": null, "providers": ["FlareiX"], "use_all_providers": false, "include": "🇹🇼|TW|tw|台湾|台|(?i)Tai", "probe": { "url": "https://www.gstatic.com/generate_204", "coverage_interval": "10m", "timeout": "5s", "concurrency": 8, "queue_size": 4096 }, "policy": { "default": "adaptive", "strict_lease_ttl": "30m", "adaptive_lease_ttl": "10m", "max_leases": 8192, "max_attempts": 2, "attempt_timeout": "4s", "hedge_delay": "450ms", "manual_failure": "fallback", "ai_ipv6_policy": "allow" }, "state": { "path": "adaptive-state/tw", "retention": "168h", "max_entries": 4096 } },
-    { "tag": "日本_智能", "type": "adaptive_pool", "outbounds": null, "providers": ["FlareiX"], "use_all_providers": false, "include": "🇯🇵|JP|jp|日本|日|(?i)Japa", "probe": { "url": "https://www.gstatic.com/generate_204", "coverage_interval": "10m", "timeout": "5s", "concurrency": 8, "queue_size": 4096 }, "policy": { "default": "adaptive", "strict_lease_ttl": "30m", "adaptive_lease_ttl": "10m", "max_leases": 8192, "max_attempts": 2, "attempt_timeout": "4s", "hedge_delay": "450ms", "manual_failure": "fallback", "ai_ipv6_policy": "allow" }, "state": { "path": "adaptive-state/jp", "retention": "168h", "max_entries": 4096 } },
-    { "tag": "新加坡_智能", "type": "adaptive_pool", "outbounds": null, "providers": ["FlareiX"], "use_all_providers": false, "include": "🇸🇬|SG|sg|新加坡|狮|(?i)Sing", "probe": { "url": "https://www.gstatic.com/generate_204", "coverage_interval": "10m", "timeout": "5s", "concurrency": 8, "queue_size": 4096 }, "policy": { "default": "adaptive", "strict_lease_ttl": "30m", "adaptive_lease_ttl": "10m", "max_leases": 8192, "max_attempts": 2, "attempt_timeout": "4s", "hedge_delay": "450ms", "manual_failure": "fallback", "ai_ipv6_policy": "allow" }, "state": { "path": "adaptive-state/sg", "retention": "168h", "max_entries": 4096 } },
-    { "tag": "美国_智能", "type": "adaptive_pool", "outbounds": null, "providers": ["FlareiX"], "use_all_providers": false, "include": "🇺🇸|US|USA|us|usa|美国|美|(?i)Uni|(?i)Amer", "probe": { "url": "https://www.gstatic.com/generate_204", "coverage_interval": "10m", "timeout": "5s", "concurrency": 8, "queue_size": 4096 }, "policy": { "default": "adaptive", "strict_lease_ttl": "30m", "adaptive_lease_ttl": "10m", "max_leases": 8192, "max_attempts": 2, "attempt_timeout": "4s", "hedge_delay": "450ms", "manual_failure": "fallback", "ai_ipv6_policy": "allow" }, "state": { "path": "adaptive-state/us", "retention": "168h", "max_entries": 4096 } },
+    { "tag": "香港_智能", "type": "smart", "outbounds": null, "providers": ["FlareiX"], "use_all_providers": false, "include": "🇭🇰|HK|hk|香港|港|(?i)Hong", "history_retention": "168h" },
+    { "tag": "台湾_智能", "type": "smart", "outbounds": null, "providers": ["FlareiX"], "use_all_providers": false, "include": "🇹🇼|TW|tw|台湾|台|(?i)Tai", "history_retention": "168h" },
+    { "tag": "日本_智能", "type": "smart", "outbounds": null, "providers": ["FlareiX"], "use_all_providers": false, "include": "🇯🇵|JP|jp|日本|日|(?i)Japa", "history_retention": "168h" },
+    { "tag": "新加坡_智能", "type": "smart", "outbounds": null, "providers": ["FlareiX"], "use_all_providers": false, "include": "🇸🇬|SG|sg|新加坡|狮|(?i)Sing", "history_retention": "168h" },
+    { "tag": "美国_智能", "type": "smart", "outbounds": null, "providers": ["FlareiX"], "use_all_providers": false, "include": "🇺🇸|US|USA|us|usa|美国|美|(?i)Uni|(?i)Amer", "history_retention": "168h" },
 
-    { "tag": "香港_故障转移", "type": "urltest", "interval": "5m", "outbounds": [ "香港_手动", "香港_智能" ], "fallback": {"enabled": true} },
-    { "tag": "台湾_故障转移", "type": "urltest", "interval": "5m", "outbounds": [ "台湾_手动", "台湾_智能" ], "fallback": {"enabled": true} },
-    { "tag": "日本_故障转移", "type": "urltest", "interval": "5m", "outbounds": [ "日本_手动", "日本_智能" ], "fallback": {"enabled": true} },
-    { "tag": "新加坡_故障转移", "type": "urltest", "interval": "5m", "outbounds": [ "新加坡_手动", "新加坡_智能" ], "fallback": {"enabled": true} },
-    { "tag": "美国_故障转移", "type": "urltest", "interval": "5m", "outbounds": [ "美国_手动", "美国_智能" ], "fallback": {"enabled": true} },
+    { "tag": "香港_故障转移", "type": "urltest", "interval": "5m", "outbounds": [ "香港_手动", "香港_智能" ] },
+    { "tag": "台湾_故障转移", "type": "urltest", "interval": "5m", "outbounds": [ "台湾_手动", "台湾_智能" ] },
+    { "tag": "日本_故障转移", "type": "urltest", "interval": "5m", "outbounds": [ "日本_手动", "日本_智能" ] },
+    { "tag": "新加坡_故障转移", "type": "urltest", "interval": "5m", "outbounds": [ "新加坡_手动", "新加坡_智能" ] },
+    { "tag": "美国_故障转移", "type": "urltest", "interval": "5m", "outbounds": [ "美国_手动", "美国_智能" ] },
 
     { "tag": "全球直连", "type": "direct" },
     { "tag": "🌐HOME_IPv4_HK", "type":"shadowsocks", "server":"83.229.123.160", "server_port":50000, "method":"aes-128-gcm", "password":"N7qLw9s_VP4eKx28mRA6zYtF5bCj3HDu" },
@@ -178,8 +180,7 @@
   },
   "experimental": {
     "cache_file": { "enabled": true, "path": "/etc/momo/run/cache.db", "store_fakeip": true },
-    "urltest_unified_delay": true,
-      "clash_api": { "external_controller": "0.0.0.0:9090", "external_ui": "/etc/momo/run/ui", "secret": "", "default_mode": "rule", "external_ui_download_url": "https://gh-proxy.com/https://github.com/Zephyruso/zashboard/archive/refs/heads/gh-pages.zip" }
+    "clash_api": { "external_controller": "0.0.0.0:9090", "external_ui": "/etc/momo/run/ui", "secret": "", "default_mode": "rule", "external_ui_download_url": "https://gh-proxy.com/https://github.com/Zephyruso/zashboard/archive/refs/heads/gh-pages.zip" }
   },
   "services": [
     {

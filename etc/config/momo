@@ -1,7 +1,7 @@
 
 config config 'config'
 	option enabled '1'
-	option profile 'file:M28C_singbox_1.14_smart.json'
+	option profile 'file:M28C_singbox_1.14.json'
 	option start_delay '0'
 	option scheduled_restart '0'
 	option scheduled_restart_cron '0 3 * * *'

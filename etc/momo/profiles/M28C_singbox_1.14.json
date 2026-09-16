@@ -36,18 +36,21 @@
     { "tag": "tproxy-in", "type": "tproxy", "listen": "::", "listen_port": 7894 }
   ],
   "providers": [
-    { "tag": "FlareiX_100G",
-      "url": "https://156.245.232.84:8443/api/proxy/open/subscription?passwd=acf96a6e-b84a-dbfd-acf9-6a6eb84adbfd&client=CLASH",
+    { "tag": "FlareiX",
+      "url": "https://156.245.232.84:8443/api/proxy/open/subscription?passwd=98646b38-cd76-7962-9864-6b38cd767962&client=CLASH",
       "type": "remote", "health_check": { "enabled": false, "url": "https://www.gstatic.com/generate_204", "interval": "10m", "timeout": "3s" }, "http_client": "HTTP 客户端", "update_interval": "12h",
       "exclude": "官网|剩余|流量|套餐|免费|订阅|全球直连|到期时间|GB|Expire Date|Traffic|ExpireDate"
     },
-    { "tag": "200G",
+    { "tag": "快游戏",
       "url": "https://sub1.qingze-quick.top/subscribe/fb3505e5304c320f26cddb200f7ab0a7",
       "type": "remote", "health_check": { "enabled": false, "url": "https://www.gstatic.com/generate_204", "interval": "10m", "timeout": "3s" }, "http_client": "HTTP 客户端", "update_interval": "12h",
       "exclude": "官网|剩余|流量|套餐|免费|订阅|全球直连|到期时间|GB|Expire Date|Traffic|ExpireDate"
     }
   ],
   "outbounds": [
+    { "tag":"新加坡专线", "type":"shadowsocks", "server":"iepllat.outline58.com", "server_port":39510, "method":"chacha20-ietf-poly1305", "password":"9ea6235b-75f5-479b-a0bb-c429f366eeed"},
+    { "tag":"日本专线", "type":"shadowsocks", "server":"iepllat.outline58.com", "server_port":39509, "method":"chacha20-ietf-poly1305", "password":"9ea6235b-75f5-479b-a0bb-c429f366eeed"},
+
     { "tag": "节点选择", "type": "selector", "default": "香港_故障转移", "outbounds": [ "香港_手动", "香港_故障转移", "台湾_手动", "台湾_故障转移", "日本_手动", "日本_故障转移", "新加坡_手动", "新加坡_故障转移", "美国_手动", "美国_故障转移", "全部节点_手动", "全部节点_故障转移" ] },
     { "tag": "AI", "type": "selector", "default": "台湾_故障转移", "outbounds": [ "节点选择", "香港_手动", "香港_故障转移", "台湾_手动", "台湾_故障转移", "日本_手动", "日本_故障转移", "新加坡_手动", "新加坡_故障转移", "美国_手动", "美国_故障转移", "全部节点_手动", "全部节点_故障转移" ] },
     { "tag": "TikTok", "type": "selector", "default": "台湾_故障转移", "outbounds": [ "节点选择", "香港_手动", "香港_故障转移", "台湾_手动", "台湾_故障转移", "日本_手动", "日本_故障转移", "新加坡_手动", "新加坡_故障转移", "美国_手动", "美国_故障转移", "全部节点_手动", "全部节点_故障转移" ] },
@@ -74,8 +77,8 @@
 
     { "tag": "香港_手动", "type": "selector", "outbounds": null, "use_all_providers": true, "include" :"🇭🇰|HK|hk|香港|港|(?i)Hong" },
     { "tag": "台湾_手动", "type": "selector", "outbounds": null, "use_all_providers": true, "include": "🇹🇼|TW|tw|台湾|台|(?i)Tai" },
-    { "tag": "日本_手动", "type": "selector", "outbounds": null, "use_all_providers": true, "include": "🇯🇵|JP|jp|日本|日|(?i)Japa" },
-    { "tag": "新加坡_手动", "type": "selector", "outbounds": null, "use_all_providers": true, "include": "🇸🇬|SG|sg|新加坡|狮|(?i)Sing" },
+    { "tag": "日本_手动", "type": "selector", "outbounds": ["日本专线"], "use_all_providers": true, "include": "🇯🇵|JP|jp|日本|日|(?i)Japa" },
+    { "tag": "新加坡_手动", "type": "selector", "outbounds": ["新加坡专线"], "use_all_providers": true, "include": "🇸🇬|SG|sg|新加坡|狮|(?i)Sing" },
     { "tag": "美国_手动", "type": "selector", "outbounds": null, "use_all_providers": true, "include": "🇺🇸|US|USA|us|usa|美国|美|(?i)Uni|(?i)Amer" },
 
     { "tag": "香港_故障转移", "type": "urltest", "interval": "5m", "outbounds": [ "香港_手动" ], "use_all_providers": true, "include" :"🇭🇰|HK|hk|香港|港|(?i)Hong", "fallback": {"enabled": true} },
@@ -168,7 +171,7 @@
   "experimental": {
     "cache_file": { "enabled": true, "path": "/etc/momo/run/cache.db", "store_fakeip": true },
     "urltest_unified_delay": true,
-      "clash_api": { "external_controller": "0.0.0.0:9090", "external_ui": "/etc/momo/run/ui", "secret": "", "default_mode": "rule", "external_ui_download_url": "https://gh-proxy.com/https://github.com/Zephyruso/zashboard/archive/refs/heads/gh-pages.zip", "external_ui_download_detour": "GitHub" }
+    "clash_api": { "external_controller": "0.0.0.0:9090", "external_ui": "/etc/momo/run/ui", "secret": "", "default_mode": "rule", "external_ui_download_url": "https://gh-proxy.com/https://github.com/Zephyruso/zashboard/archive/refs/heads/gh-pages.zip" }
   },
   "services": [
     {
